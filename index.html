@@ -1,0 +1,134 @@
+<html>
+<head>
+<title>NetPong</title>
+</head>
+<style type='text/css'>
+</style>
+<script type='text/javascript' src='canv.js'></script>
+<script type='text/javascript' src='player.js'></script>
+<script type='text/javascript' src='pongrenderer.js'></script>
+
+<script type='text/javascript'>
+var c;
+
+//Gameloop variables
+var tick_tock;
+var stamps = [];
+var fps;
+var fpsDisplayUpdateCountdown;
+var delta;
+
+var mouseY;
+var netY;
+var bx;
+var by;
+var bxPassP1;
+var bxPassP2;
+var bxvel;
+var byvel;
+
+var p1;
+var p2;
+
+var init = function()
+{
+  c = new Canv(640,320);
+  c.canvas.style.border = '1px solid black';
+  document.getElementById('render_area').insertBefore(c.canvas,document.getElementById('shadow'));
+  
+  //Init game loop variables
+  tick_tock = true;
+  stamps[true]  = new Date().getTime();
+  stamps[false] = new Date().getTime();
+  fps = 0;
+  fpsDisplayUpdateCountdown = 10;
+
+  //Init game state
+  p1 = new Player(1,"human");
+  p2 = new Player(2,"computer");
+  
+  bx = 320;
+  by = 160;
+  pxPassP1 = false;
+  pxPassP2 = false;
+  bxvel = Math.random()+1;
+  byvel = 2-bxvel;
+  if(Math.random() > 0.5) bxvel *= -1;
+  if(Math.random() > 0.5) byvel *= -1;
+
+  tick();
+}
+  
+var tick = function()
+{
+  p1.tick();
+  p2.tick();
+  
+  bx += bxvel;
+  by += byvel;
+
+  //p1 "collision detection" (lol)
+  if(!bxPassP1 && bx < 25)
+  {
+    if(by < p1.y+30 && by > p1.y-30)
+      bxvel *= -1;
+    else bxPassP1 = true;
+  }
+  if(bxPassP1 && by < p1.y+30 && by > p1.y-30)
+    byvel *= -1;
+  if(bxPassP1 && bx > 25)
+    bxPassP1 = false;
+
+  //p2 "collision detection" (lol)
+  if(!bxPassP2 && bx > 615)
+  {
+    if(by < p2.y+30 && by > p2.y-30)
+      bxvel *= -1;
+    else bxPassP2 = true;
+  }
+  if(bxPassP2 && by < p2.y+30 && by > p2.y-30)
+    byvel *= -1;
+  if(bxPassP2 && bx > 615)
+    bxPassP2 = false;
+
+  //Wall bounce
+  if(bx < 5)   bxvel *= -1;
+  if(bx > 635) bxvel *= -1;
+  if(by < 5)   byvel *= -1;
+  if(by > 315) byvel *= -1;
+  
+  //Speed up
+  bxvel *= 1.00025;
+  byvel *= 1.00025;
+  if(bxvel > 20) bxvel = 20;
+  if(byvel > 20) byvel = 20;
+  
+  renderPong(c,Math.round(p1.y),Math.round(p2.y),Math.round(bx),Math.round(by));
+  
+  //Game loop/framerate vars
+  delta = ((stamps[tick_tock] = new Date().getTime()) - stamps[(tick_tock = !tick_tock)]);
+  fpsDisplayUpdateCountdown--;
+  if(fpsDisplayUpdateCountdown == 0)
+  {
+    fps = Math.round(1000/delta);
+    fpsDisplayUpdatecountdown = 10;
+  }
+  
+  setTimeout(tick, 10);
+}
+
+var recordMouseY = function(e)
+{
+  mouseY = e.clientY-50;
+}
+
+window.addEventListener('load', init, false);
+window.addEventListener("mousemove", recordMouseY, false);
+</script>
+<body style='background-color:#EEEEEE;'>
+<div id='render_area' style='width:640px; margin:10px auto; position:relative; top:50px;'>
+  <img id='shadow' src='shadow.png' style='display:block;'></img>
+</div>
+<div id="debug" style="color:white; position:absolute; top:0px;"></div>
+</body>
+</html>
