@@ -1,4 +1,4 @@
-var renderPong = function(c, p1, p2, bx, by) // canv, player1y, player2y, ballx, bally
+var renderPong = function(c, bx, by, p1, p2) // canv, ballx, bally, player1y, player2y,
 {
   c.context.fillStyle = "#000000";
   c.context.fillRect(0,0,640,320);
