@@ -5,11 +5,13 @@
 <style type='text/css'>
 </style>
 <script type='text/javascript' src='canv.js'></script>
+<script src="http://phildogames.com:4000/socket.io/socket.io.js"></script><!-- fetches file via node js -->
 <script type='text/javascript' src='player.js'></script>
 <script type='text/javascript' src='pongrenderer.js'></script>
 
 <script type='text/javascript'>
 var c;
+var s;
 
 //Gameloop variables
 var tick_tock;
@@ -32,6 +34,10 @@ var p2;
 
 var init = function()
 {
+  s = io.connect('http://phildogames.com:4000');
+  s.on('tested', function(data) { alert("hello "+data.hello); });
+  s.emit('test',"hey");
+
   c = new Canv(640,320);
   c.canvas.style.border = '1px solid black';
   document.getElementById('render_area').insertBefore(c.canvas,document.getElementById('shadow'));
@@ -98,8 +104,8 @@ var tick = function()
   if(by > 315) byvel *= -1;
   
   //Speed up
-  bxvel *= 1.00025;
-  byvel *= 1.00025;
+  //bxvel *= 1.00025;
+  //byvel *= 1.00025;
   if(bxvel > 20) bxvel = 20;
   if(byvel > 20) byvel = 20;
   
@@ -123,6 +129,7 @@ var recordMouseY = function(e)
 }
 
 window.addEventListener('load', init, false);
+window.addEventListener('click', function(e){ s.emit('test','hi'); }, false);
 window.addEventListener("mousemove", recordMouseY, false);
 </script>
 <body style='background-color:#EEEEEE;'>
