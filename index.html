@@ -86,15 +86,18 @@ var register = function()
 window.addEventListener('load', init, false);
 window.addEventListener("mousemove", function(e) { mouseY = e.clientY-50; }, false);
 </script>
-<body style='background-color:#EEEEEE;'>
+<body style='background-color:#EEEEEE; min-height:500px;'>
 <div style='width:1040px; margin:10px auto; position:relative; top:50px;'>
-  <div id='queue' style='width:200px; float:left;'>
+  <div id='queue' style='width:200px; min-height:50px; float:left;'>
     <div><input type='text' id='rname'></input><button type='buton' onclick='register();'>register</button></div>
   </div>
-  <div id='render_area' style='width:640px; margin:0px auto; float:left;'>
+  <div id='render_area' style='width:640px; min-height:50px; margin:0px auto; float:left;'>
     <img id='shadow' src='shadow.png' style='display:block;'></img>
   </div>
-  <div style='width:200px;'>
+  <div style='width:200px; min-height:50px; float:left;'>
+  </div>
+  <div style='text-align:center; font-size:small; width:100%; float:clear;'>
+    not working? I probably took down the node server... feel free to boot up <a href="https://github.com/Phildo/netpong">your own instance!</a>
   </div>
 </div>
 </body>
