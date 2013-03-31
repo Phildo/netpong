@@ -11,20 +11,42 @@
 <script type='text/javascript'>
 var c;
 var s;
-var mouseY = 160;
 
 var state = 
 {
-  p1y:160,
-  p2y:160,
   bx:160,
-  by:160
+  by:160,
+  bxvel:0,
+  byvel:0,
 }
+
+var p1state = 
+{
+  py:160,
+  pyvel:0
+}
+
+var p2state = 
+{
+  py:160,
+  pyvel:0
+}
+
+var control = 0;
+var mouseY = 160;
+var mousedelta = 0;
+
+//First two members are player 1 and 2 repsectively
+var queue = ["computer1","computer2","you"];
 
 var init = function()
 {
   s = io.connect('http://phildogames.com:4000');
-  s.on('state', function(data) { state = data; });
+  s.on('state',   function(data) {   state = data; /*console.log(data);*/ });
+  s.on('p1state', function(data) { p1state = data; /*console.log(data);*/ });
+  s.on('p2state', function(data) { p2state = data; /*console.log(data);*/ });
+  s.on('control', function(data) { control = data; /*console.log(data);*/ });
+  //s.emit('registered','phil');
 
   c = new Canv(640,320);
   c.canvas.style.border = '1px solid black';
@@ -34,17 +56,46 @@ var init = function()
   
 var tick = function()
 {
-  renderPong(c,state.bx,state.by,state.p1y,state.p2y);
   setTimeout(tick, 10);
+
+  if(control == 1)
+  {
+    if(mouseY >  p1state.py/* && mousedelta != 2*/)  { mousedelta = 2;  s.emit('move',mouseY); }
+    if(mouseY <  p1state.py/* && mousedelta != -2*/) { mousedelta = -2; s.emit('move',mouseY); }
+    if(mouseY == p1state.py/* && mousedelta != 0*/)  { mousedelta = 0;  s.emit('move',mouseY); }
+  }
+  else if(control == 2)
+  {
+    if(mouseY >  p2state.py/* && mousedelta != 2*/)  { mousedelta = 2;  s.emit('move',mouseY); }
+    if(mouseY <  p2state.py/* && mousedelta != -2*/) { mousedelta = -2; s.emit('move',mouseY); }
+    if(mouseY == p2state.py/* && mousedelta != 0*/)  { mousedelta = 0;  s.emit('move',mouseY); }
+  }
+
+  renderPong(c,state.bx,state.by,p1state.py,p2state.py);
+  state.bx += state.bxvel;
+  state.by += state.byvel;
+  p1state.py += p1state.pyvel;
+  p2state.py += p2state.pyvel;
+}
+
+var register = function()
+{
+  s.emit('registered',document.getElementById('rname').value);
 }
 
 window.addEventListener('load', init, false);
 window.addEventListener("mousemove", function(e) { mouseY = e.clientY-50; }, false);
 </script>
 <body style='background-color:#EEEEEE;'>
-<div id='render_area' style='width:640px; margin:10px auto; position:relative; top:50px;'>
-  <img id='shadow' src='shadow.png' style='display:block;'></img>
+<div style='width:1040px; margin:10px auto; position:relative; top:50px;'>
+  <div id='queue' style='width:200px; float:left;'>
+    <div><input type='text' id='rname'></input><button type='buton' onclick='register();'>register</button></div>
+  </div>
+  <div id='render_area' style='width:640px; margin:0px auto; float:left;'>
+    <img id='shadow' src='shadow.png' style='display:block;'></img>
+  </div>
+  <div style='width:200px;'>
+  </div>
 </div>
-<div id="debug" style="color:white; position:absolute; top:0px;"></div>
 </body>
 </html>
