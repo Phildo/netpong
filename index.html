@@ -3,6 +3,16 @@
 <title>NetPong</title>
 </head>
 <style type='text/css'>
+  @font-face
+  {
+      font-family:vg_font;
+      src:url('emulogic.ttf');
+  }
+  body
+  {
+    font-family:vg_font;
+    -webkit-user-select: none;
+  }
 </style>
 <script src="http://phildogames.com:4000/socket.io/socket.io.js"></script><!-- fetches file via node js -->
 <script type='text/javascript' src='canv.js'></script>
@@ -96,7 +106,7 @@ window.addEventListener("mousemove", function(e) { mouseY = e.clientY-50; }, fal
   </div>
   <div style='width:200px; min-height:50px; float:left;'>
   </div>
-  <div style='text-align:center; font-size:small; width:100%; float:clear;'>
+  <div style='text-align:center; font-size:xx-small; width:600px; margin:0px auto;'>
     not working? I probably took down the node server... feel free to boot up <a href="https://github.com/Phildo/netpong">your own instance!</a>
   </div>
 </div>
