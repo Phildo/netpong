@@ -1,10 +1,13 @@
-var renderPong = function(c, bx, by, p1, p2) // canv, ballx, bally, player1y, player2y,
+this.PongRenderer = function(c, arena, sim)
 {
-  c.context.fillStyle = "#000000";
-  c.context.fillRect(0,0,640,320);
-
-  c.context.fillStyle = "#FFFFFF";
-  c.context.fillRect(10,p1-25,10,50);
-  c.context.fillRect(620,p2-25,10,50);
-  c.context.fillRect(bx-5,by-5,10,10);
-}
+  this.render = function()
+  {
+    c.context.fillStyle = "#000000";
+    c.context.fillRect(0,0,arena.width,arena.height);
+  
+    c.context.fillStyle = "#FFFFFF";
+    c.context.fillRect(arena.paddleWidth,                 sim.p1y-(arena.paddleHeight/2), arena.paddleWidth, arena.paddleHeight);
+    c.context.fillRect(arena.width-(2*arena.paddleWidth), sim.p2y-(arena.paddleHeight/2), arena.paddleWidth, arena.paddleHeight);
+    c.context.fillRect(sim.bx-(arena.ballSize/2), sim.by-(arena.ballSize/2), arena.ballSize, arena.ballSize);
+  };
+};

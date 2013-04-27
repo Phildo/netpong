@@ -14,53 +14,78 @@
     -webkit-user-select: none;
   }
 </style>
-<script src="http://phildogames.com:4000/socket.io/socket.io.js"></script><!-- fetches file via node js -->
+<script src="http://phildogames.com:4029/socket.io/socket.io.js"></script><!-- fetches file via node js -->
 <script type='text/javascript' src='canv.js'></script>
+<script type='text/javascript' src='pongarena.js'></script>
+<script type='text/javascript' src='pongstatesim.js'></script>
 <script type='text/javascript' src='pongrenderer.js'></script>
 
 <script type='text/javascript'>
 var c;
 var s;
+var arena;
+var sim;
+var player1;
+var player2;
+var renderer;
 
-var state = 
+var control = false;
+var myMouseY = 160;
+var identity = "queued";
+var syncStateObj;
+
+var queue = [];
+
+//kinda stupid- if we wrapped this whole thing in a 'client' object or something, we wouldn't have to do this...
+var PongStateSimDelegate = function()
 {
-  bx:160,
-  by:160,
-  bxvel:0,
-  byvel:0,
+  this.hitPaddle = function(who)
+  {
+    if(!control) return;
+    sim.syncBallStateIntoObject(syncStateObj);
+    s.emit('state',syncStateObj);
+    syncStateObj.send = false; //already sent
+    s.emit('concedeControl',true);
+    control = false;
+  };
+
+  this.scoreOn = function(who)
+  {
+    if(!control) return;
+    sim.syncBallStateIntoObject(syncStateObj);
+    s.emit('state',syncStateObj);
+    syncStateObj.send = false; //already sent
+    s.emit('concedeControl',true);
+    control = false;
+  };
+
+  this.wallBounce = function()
+  {
+    if(!control) return;
+    sim.syncBallStateIntoObject(syncStateObj);
+    syncStateObj.send = true;
+  };
 }
-
-var p1state = 
-{
-  py:160,
-  pyvel:0
-}
-
-var p2state = 
-{
-  py:160,
-  pyvel:0
-}
-
-var control = 0;
-var mouseY = 160;
-var mousedelta = 0;
-
-//First two members are player 1 and 2 repsectively
-var queue = ["computer1","computer2","you"];
 
 var init = function()
 {
-  s = io.connect('http://phildogames.com:4000');
-  s.on('state',   function(data) {   state = data; /*console.log(data);*/ });
-  s.on('p1state', function(data) { p1state = data; /*console.log(data);*/ });
-  s.on('p2state', function(data) { p2state = data; /*console.log(data);*/ });
-  s.on('control', function(data) { control = data; /*console.log(data);*/ });
-  //s.emit('registered','phil');
+  s = io.connect('http://phildogames.com:4029'); //lol '4029' == 'PONG'... kinda...
+  s.on('state',    function(data){ sim.setState(data); });
+  s.on('queue',    function(data){ queue = data;       });
+  s.on('identity', function(data){ identity = data;    });
+  s.on('control',  function(data){ control = data;     });
 
   c = new Canv(640,320);
   c.canvas.style.border = '1px solid black';
   document.getElementById('render_area').insertBefore(c.canvas,document.getElementById('shadow'));
+
+  //the 'this.' is because I'm reusing code on server and client. and node's include is different than javascript's src
+  arena    = new this.PongArena(640,320,20,100,20); //Changes must be duplicated on the server!
+  sim      = new this.PongStateSim(arena, new PongStateSimDelegate()); 
+  renderer = new this.PongRenderer(c, arena, sim);
+
+  sim.init();
+
   tick();
 }
   
@@ -68,24 +93,42 @@ var tick = function()
 {
   setTimeout(tick, 10);
 
-  if(control == 1)
+  syncStateObj = {"send":false};
+  if(identity == "p1")
   {
-    if(mouseY >  p1state.py/* && mousedelta != 2*/)  { mousedelta = 2;  s.emit('move',mouseY); }
-    if(mouseY <  p1state.py/* && mousedelta != -2*/) { mousedelta = -2; s.emit('move',mouseY); }
-    if(mouseY == p1state.py/* && mousedelta != 0*/)  { mousedelta = 0;  s.emit('move',mouseY); }
+    var oldvel = sim.p1yvel;
+    if(myMouseY > sim.p1y)  { sim.p1yvel = 2;  if(sim.p1y >= arena.height-(arena.paddleHeight/2)){ sim.p1y = arena.height-(arena.paddleHeight/2); sim.p1yvel = 0; }}
+    if(myMouseY < sim.p1y)  { sim.p1yvel = -2; if(sim.p1y <= arena.paddleHeight/2)               { sim.p1y = arena.paddleHeight/2;                sim.p1yvel = 0; }}
+    if(myMouseY == sim.p1y) { sim.p1yvel = 0; }
+    if(sim.p1yvel != oldvel)
+    {
+      syncStateObj.p1y    = sim.p1y;
+      syncStateObj.p1yvel = sim.p1yvel;
+      syncStateObj.send = true;
+    }
   }
-  else if(control == 2)
+  if(identity == "p2")
   {
-    if(mouseY >  p2state.py/* && mousedelta != 2*/)  { mousedelta = 2;  s.emit('move',mouseY); }
-    if(mouseY <  p2state.py/* && mousedelta != -2*/) { mousedelta = -2; s.emit('move',mouseY); }
-    if(mouseY == p2state.py/* && mousedelta != 0*/)  { mousedelta = 0;  s.emit('move',mouseY); }
+    var oldvel = sim.p2yvel;
+    if(myMouseY > sim.p2y)  { sim.p2yvel = 2;  if(sim.p2y >= arena.height-(arena.paddleHeight/2)){ sim.p2y = arena.height-(arena.paddleHeight/2); sim.p2yvel = 0; }}
+    if(myMouseY < sim.p2y)  { sim.p2yvel = -2; if(sim.p2y <= arena.paddleHeight/2)               { sim.p2y = arena.paddleHeight/2;                sim.p2yvel = 0; }}
+    if(myMouseY == sim.p2y) { sim.p2yvel = 0; }
+    if(sim.p2yvel != oldvel)
+    {
+      syncStateObj.p2y    = sim.p2y;
+      syncStateObj.p2yvel = sim.p2yvel;
+      syncStateObj.send = true;
+    }
   }
 
-  renderPong(c,state.bx,state.by,p1state.py,p2state.py);
-  state.bx += state.bxvel;
-  state.by += state.byvel;
-  p1state.py += p1state.pyvel;
-  p2state.py += p2state.pyvel;
+  sim.tick();
+
+  if(syncStateObj.send)
+  {
+    s.emit('state',syncStateObj);
+  }
+
+  renderer.render();
 }
 
 var register = function()
@@ -94,7 +137,7 @@ var register = function()
 }
 
 window.addEventListener('load', init, false);
-window.addEventListener("mousemove", function(e) { mouseY = e.clientY-50; }, false);
+window.addEventListener("mousemove", function(e) { myMouseY = e.clientY-50; }, false);
 </script>
 <body style='background-color:#EEEEEE; min-height:500px;'>
 <div style='width:1040px; margin:10px auto; position:relative; top:50px;'>
